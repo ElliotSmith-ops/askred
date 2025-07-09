@@ -113,8 +113,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
             },
           });
-        } catch (axiosErr: AxiosError) {
-          if (axiosErr?.response?.status === 403) {
+        } catch (axiosErr) {
+          if (axios.isAxiosError(axiosErr) && axiosErr?.response?.status === 403) {
             console.warn("🛑 Reddit 403 block. Skipping:", thread.url);
             return [];
           } else {
