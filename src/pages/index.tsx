@@ -2,16 +2,18 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
-
-
-
 export default function Home() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<
-  { product: string; reason: string; endorsement_score?: number; redditUrl?: string; amazonUrl?: string }[]
->([]);
-
+    {
+      product: string;
+      reason: string;
+      endorsement_score?: number;
+      redditUrl?: string;
+      amazonUrl?: string;
+    }[]
+  >([]);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -26,7 +28,6 @@ export default function Home() {
     setLoading(false);
   };
 
-  // Sort results by endorsement_score descending
   const sortedResults = [...results].sort((a, b) => {
     const aScore = a.endorsement_score ?? -1;
     const bScore = b.endorsement_score ?? -1;
@@ -38,12 +39,13 @@ export default function Home() {
       <Image
         src="/buydit.png"
         alt="Buydit Logo"
-        width={200}  // adjust size as needed
-        height={20}  // adjust size as needed
+        width={200}
+        height={60}
         className="mb-6 mt-4"
       />
+
       <p className="text-center text-gray-700 font-bold mb-6">
-      Reddit recommends. We link. You buy.
+        Reddit recommends. We link. You buy.
       </p>
 
       <input
@@ -102,15 +104,28 @@ export default function Home() {
         ))}
       </div>
 
+      {/* Buy Me a Coffee Button */}
+      <div className="mt-10">
+        <a
+          href="https://www.buymeacoffee.com/ElliotS"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img
+            src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
+            alt="Buy Me A Coffee"
+            style={{ height: "60px", width: "217px" }}
+          />
+        </a>
+      </div>
+
       <footer className="mt-10 text-sm text-gray-500 text-center">
-  <p>
-  As an Amazon Associate I earn from qualifying purchases.
-  </p>
-  <div className="mt-2 flex justify-center gap-4">
-    <Link href="/privacy">Privacy Policy</Link>
-    <Link href="/terms">Terms of Use</Link>
-  </div>
-</footer>
+        <p>As an Amazon Associate I earn from qualifying purchases.</p>
+        <div className="mt-2 flex justify-center gap-4">
+          <Link href="/privacy">Privacy Policy</Link>
+          <Link href="/terms">Terms of Use</Link>
+        </div>
+      </footer>
     </main>
   );
 }
