@@ -34,9 +34,6 @@ type Thread = {
   num_comments: number;
 };
 
-type SimpleRedditComment = { body: string };
-type SimpleRedditSubmission = { comments: SimpleRedditComment[] };
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   const rawQuery = req.body.query;
   const query = rawQuery?.trim().toLowerCase();
@@ -97,8 +94,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         console.log("🌐 Fetching Reddit post via API...");
-        const submission = await reddit.getSubmission(postId).expandReplies({ depth: 1, limit: 20 }) as SimpleRedditSubmission;
-        const commentsRaw = submission.comments.map((c) => c.body).filter(Boolean).slice(0, 15);
+        const submission = await reddit.getSubmission(postId).expandReplies({ depth: 1, limit: 20 });
+        const commentsRaw = submission.comments
+          .map((c: any) => c.body)
+          .filter(Boolean)
+          .slice(0, 15);
 
         console.log("💬 Top comment count:", commentsRaw.length);
 
