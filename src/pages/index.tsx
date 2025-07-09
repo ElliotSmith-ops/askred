@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import Head from "next/head";
 
 export default function Home() {
   const [query, setQuery] = useState("");
@@ -35,97 +36,127 @@ export default function Home() {
   });
 
   return (
-    <main className="min-h-screen bg-gray-100 p-4 flex flex-col items-center">
-      <Image
-        src="/buydit.png"
-        alt="Buydit Logo"
-        width={200}
-        height={60}
-        className="mb-6 mt-4"
-      />
+    <>
+      <Head>
+        <title>Buydit – Reddit-powered product picks</title>
+        <meta
+          name="description"
+          content="Reddit recommends. We link. You buy. Discover top-rated products backed by real Reddit threads."
+        />
 
-      <p className="text-center text-gray-700 font-bold mb-6">
-        Reddit recommends. We link. You buy.
-      </p>
+        {/* Open Graph / Social */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://www.buydit.org/" />
+        <meta property="og:title" content="Buydit – Reddit-powered product picks" />
+        <meta
+          property="og:description"
+          content="Reddit recommends. We link. You buy. Discover top-rated products backed by real Reddit threads."
+        />
+        <meta property="og:image" content="https://www.buydit.org/og.png" />
 
-      <input
-        type="text"
-        className="w-full text-black max-w-md p-3 border rounded mb-4"
-        placeholder="What are you looking for? (e.g. Guitars, Moisturizer)"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content="https://www.buydit.org/" />
+        <meta name="twitter:title" content="Buydit – Reddit-powered product picks" />
+        <meta
+          name="twitter:description"
+          content="Reddit recommends. We link. You buy. Discover top-rated products backed by real Reddit threads."
+        />
+        <meta name="twitter:image" content="https://www.buydit.org/og.png" />
+      </Head>
 
-      <button
-        onClick={handleSearch}
-        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-        disabled={loading}
-      >
-        {loading ? "Searching..." : "Search"}
-      </button>
+      <main className="min-h-screen bg-gray-100 p-4 flex flex-col items-center">
+        <Image
+          src="/buydit.png"
+          alt="Buydit Logo"
+          width={200}
+          height={60}
+          className="mb-6 mt-4"
+        />
 
-      <div className="w-full max-w-md mt-6 space-y-4">
-        {sortedResults.map((item, idx) => (
-          <div key={idx} className="bg-white shadow-md rounded p-4">
-            <h2 className="font-semibold text-lg mb-1 text-[#FF4500]">
-              {item.product}
-            </h2>
-            <p className="text-black mb-2">{item.reason}</p>
+        <p className="text-center text-gray-700 font-bold mb-6">
+          Reddit recommends. We link. You buy.
+        </p>
 
-            {item.endorsement_score != null && (
-              <p className="text-sm text-gray-500 mb-2">
-                Endorsement Strength: {(item.endorsement_score * 100).toFixed(0)}%
-              </p>
-            )}
+        <input
+          type="text"
+          className="w-full text-black max-w-md p-3 border rounded mb-4"
+          placeholder="What are you looking for? (e.g. Guitars, Moisturizer)"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
 
-            <div className="flex gap-3">
-              {item.redditUrl && (
-                <a
-                  href={item.redditUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 underline"
-                >
-                  Reddit Thread
-                </a>
-              )}
-              {item.amazonUrl && (
-                <a
-                  href={item.amazonUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-green-600 underline"
-                >
-                  Amazon Link
-                </a>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Buy Me a Coffee Button */}
-      <div className="mt-10">
-        <a
-          href="https://www.buymeacoffee.com/ElliotS"
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={handleSearch}
+          className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+          disabled={loading}
         >
-          <img
-            src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
-            alt="Buy Me A Coffee"
-            style={{ height: "60px", width: "217px" }}
-          />
-        </a>
-      </div>
+          {loading ? "Searching..." : "Search"}
+        </button>
 
-      <footer className="mt-10 text-sm text-gray-500 text-center">
-        <p>As an Amazon Associate I earn from qualifying purchases.</p>
-        <div className="mt-2 flex justify-center gap-4">
-          <Link href="/privacy">Privacy Policy</Link>
-          <Link href="/terms">Terms of Use</Link>
+        <div className="w-full max-w-md mt-6 space-y-4">
+          {sortedResults.map((item, idx) => (
+            <div key={idx} className="bg-white shadow-md rounded p-4">
+              <h2 className="font-semibold text-lg mb-1 text-[#FF4500]">
+                {item.product}
+              </h2>
+              <p className="text-black mb-2">{item.reason}</p>
+
+              {item.endorsement_score != null && (
+                <p className="text-sm text-gray-500 mb-2">
+                  Endorsement Strength: {(item.endorsement_score * 100).toFixed(0)}%
+                </p>
+              )}
+
+              <div className="flex gap-3">
+                {item.redditUrl && (
+                  <a
+                    href={item.redditUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline"
+                  >
+                    Reddit Thread
+                  </a>
+                )}
+                {item.amazonUrl && (
+                  <a
+                    href={item.amazonUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-green-600 underline"
+                  >
+                    Amazon Link
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
-      </footer>
-    </main>
+
+        {/* Buy Me a Coffee Button */}
+        <div className="mt-10">
+          <a
+            href="https://www.buymeacoffee.com/ElliotS"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img
+              src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
+              alt="Buy Me A Coffee"
+              style={{ height: "60px", width: "217px" }}
+            />
+          </a>
+        </div>
+
+        <footer className="mt-10 text-sm text-gray-500 text-center">
+          <p>As an Amazon Associate I earn from qualifying purchases.</p>
+          <div className="mt-2 flex justify-center gap-4">
+            <Link href="/privacy">Privacy Policy</Link>
+            <Link href="/terms">Terms of Use</Link>
+          </div>
+        </footer>
+      </main>
+    </>
   );
 }
