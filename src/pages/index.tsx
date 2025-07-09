@@ -2,6 +2,8 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Head from "next/head";
+import { event as gaEvent } from '../lib/gtag';
+
 
 export default function Home() {
   const [query, setQuery] = useState("");
@@ -17,6 +19,11 @@ export default function Home() {
   >([]);
 
   const handleSearch = async () => {
+    gaEvent({
+      action: 'search_submitted',
+      category: 'search',
+      label: query,
+    });    
     if (!query.trim()) return;
     setLoading(true);
     const res = await fetch("/api/search", {
@@ -27,6 +34,13 @@ export default function Home() {
     const data = await res.json();
     setResults(data.results || []);
     setLoading(false);
+    if (results.length === 0) {
+      gaEvent({
+        action: 'search_empty',
+        category: 'search',
+        label: query,
+      });
+    }
   };
 
   const sortedResults = [...results].sort((a, b) => {
@@ -122,13 +136,19 @@ export default function Home() {
                 )}
                 {item.amazonUrl && (
                   <a
-                    href={item.amazonUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-green-600 underline"
-                  >
-                    Amazon Link
-                  </a>
+                  href={item.amazonUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() =>
+                    gaEvent({
+                      action: 'affiliate_click',
+                      category: 'product_engagement',
+                      label: item.product, // or product title
+                    })
+                  }
+                >
+                  View on Amazon
+                </a>
                 )}
               </div>
             </div>
