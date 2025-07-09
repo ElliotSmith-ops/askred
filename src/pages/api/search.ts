@@ -94,9 +94,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         console.log("🌐 Fetching Reddit post via API...");
-        const submission = await reddit.getSubmission(postId).expandReplies({ depth: 1, limit: 20 });
-        const commentsRaw: string[] = (submission.comments as Array<{ body: string }>)
-          .map((c) => c.body)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const expandedSubmission = await (reddit.getSubmission(postId) as any).expandReplies({ depth: 1, limit: 20 });
+
+        const commentsRaw: string[] = expandedSubmission.comments
+          .map((c: { body: string }) => c.body)
           .filter(Boolean)
           .slice(0, 15);
 
