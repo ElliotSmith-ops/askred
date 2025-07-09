@@ -38,7 +38,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Buydit – Reddit-powered product picks</title>
+        <title>Buydit – Reddit recommends. We link. You buy.</title>
         <meta
           name="description"
           content="Reddit recommends. We link. You buy. Discover top-rated products backed by real Reddit threads."
@@ -151,6 +151,7 @@ export default function Home() {
         </div>
 
         <footer className="mt-10 text-sm text-gray-500 text-center">
+          <p>This site is not affiliated with Reddit, Inc. All Reddit trademarks are property of their respective owners.</p>
           <p>As an Amazon Associate I earn from qualifying purchases.</p>
           <div className="mt-2 flex justify-center gap-4">
             <Link href="/privacy">Privacy Policy</Link>
