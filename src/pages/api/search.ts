@@ -172,7 +172,7 @@ ${commentBlock}`.trim();
             reason: item.reason,
             endorsement_score: item.endorsement_score || null,
             redditUrl: thread.url,
-            amazonUrl: `https://www.amazon.com/s?k=${encodeURIComponent(item.product)}&tag=askred-20`,
+            amazonUrl: `https://www.amazon.com/s?k=${encodeURIComponent(item.product)}&tag=buyit0d40-20`,
           }));
 
           console.log("✅ Parsed product count:", parsed.length);

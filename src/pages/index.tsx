@@ -104,7 +104,7 @@ export default function Home() {
 
       <footer className="mt-10 text-sm text-gray-500 text-center">
   <p>
-    This site uses Amazon affiliate links. We may earn a commission.
+  As an Amazon Associate I earn from qualifying purchases.
   </p>
   <div className="mt-2 flex justify-center gap-4">
     <Link href="/privacy">Privacy Policy</Link>
