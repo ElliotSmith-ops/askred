@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import OpenAI from "openai";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { createClient } from "@supabase/supabase-js";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -24,12 +24,29 @@ type RedditComment = {
   };
 };
 
+type RedditResponse = [
+  unknown,
+  {
+    data: {
+      children: RedditComment[];
+    };
+  }
+];
+
 type GPTProduct = {
   product: string;
   reason: string;
   endorsement_score?: number;
   redditUrl: string;
   amazonUrl: string;
+};
+
+type Thread = {
+  title: string;
+  url: string;
+  subreddit: string;
+  score: number;
+  num_comments: number;
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -63,7 +80,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log(`  ${i + 1}. ${r.title} — ${r.link}`);
     });
 
-    const threads = serpResults
+    const threads: Thread[] = serpResults
       .filter((r: SerpResult) => r.link?.includes("reddit.com/r/"))
       .map((r: SerpResult) => ({
         title: r.title,
@@ -73,7 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         num_comments: 0,
       }));
 
-    async function processThread(thread: { title: string; url: string; subreddit: string; score: number; num_comments: number }): Promise<GPTProduct[]> {
+    async function processThread(thread: Thread): Promise<GPTProduct[]> {
       console.log("\n==============================");
       console.log("📄 Processing thread:", thread.url);
 
@@ -91,12 +108,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         let redditResponse;
         try {
-          redditResponse = await axios.get(`https://www.reddit.com/comments/${postId}.json`, {
+          redditResponse = await axios.get<RedditResponse>(`https://www.reddit.com/comments/${postId}.json`, {
             headers: {
               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
             },
           });
-        } catch (axiosErr: any) {
+        } catch (axiosErr: AxiosError) {
           if (axiosErr?.response?.status === 403) {
             console.warn("🛑 Reddit 403 block. Skipping:", thread.url);
             return [];
@@ -105,11 +122,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         }
 
-        const dataLayer = redditResponse.data?.[1]?.data;
-        const commentsRaw: RedditComment[] = dataLayer?.children;
-        console.log("💬 Raw comment count:", commentsRaw?.length);
+        const commentsRaw = redditResponse.data?.[1]?.data?.children || [];
+        console.log("💬 Raw comment count:", commentsRaw.length);
 
-        const topComments = (commentsRaw || [])
+        const topComments = commentsRaw
           .filter((c: RedditComment) => c.kind === "t1" && c.data?.body)
           .map((c: RedditComment) => c.data.body)
           .slice(0, 15);
@@ -179,7 +195,7 @@ ${commentBlock}`.trim();
           const jsonEnd = raw.lastIndexOf("]");
           const cleanJson = raw.slice(jsonStart, jsonEnd + 1);
 
-          parsed = JSON.parse(cleanJson).map((item: GPTProduct) => ({
+          parsed = JSON.parse(cleanJson).map((item: Omit<GPTProduct, "redditUrl" | "amazonUrl">) => ({
             product: item.product,
             reason: item.reason,
             endorsement_score: item.endorsement_score || null,
