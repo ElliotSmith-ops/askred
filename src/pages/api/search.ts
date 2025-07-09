@@ -10,6 +10,8 @@ const supabase = createClient(
 );
 const SERPAPI_KEY = process.env.SERPAPI_KEY!;
 
+// Types
+
 type SerpResult = {
   title: string;
   link: string;
@@ -86,9 +88,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         console.log("🌐 Fetching Reddit thread JSON...");
-        const redditResponse = await axios.get(`https://www.reddit.com/comments/${postId}.json`, {
-          headers: { "User-Agent": "AskRedApp/1.0" },
-        });
+
+        let redditResponse;
+        try {
+          redditResponse = await axios.get(`https://www.reddit.com/comments/${postId}.json`, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+            },
+          });
+        } catch (axiosErr: any) {
+          if (axiosErr?.response?.status === 403) {
+            console.warn("🛑 Reddit 403 block. Skipping:", thread.url);
+            return [];
+          } else {
+            throw axiosErr;
+          }
+        }
 
         const dataLayer = redditResponse.data?.[1]?.data;
         const commentsRaw: RedditComment[] = dataLayer?.children;
