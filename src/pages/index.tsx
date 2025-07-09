@@ -1,5 +1,7 @@
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+
 
 
 
@@ -33,12 +35,21 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gray-100 p-4 flex flex-col items-center">
-      <h1 className="text-2xl font-bold mb-4 text-[#FF4500]">AskRed MVP</h1>
+      <Image
+        src="/buydit.png"
+        alt="Buydit Logo"
+        width={200}  // adjust size as needed
+        height={20}  // adjust size as needed
+        className="mb-6 mt-4"
+      />
+      <p className="text-center text-gray-700 font-bold mb-6">
+      Reddit recommends. We link. You buy.
+      </p>
 
       <input
         type="text"
         className="w-full text-black max-w-md p-3 border rounded mb-4"
-        placeholder="What are you looking for? (e.g. pond liner)"
+        placeholder="What are you looking for? (e.g. Guitars, Moisturizer)"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
@@ -95,10 +106,10 @@ export default function Home() {
   <p>
     This site uses Amazon affiliate links. We may earn a commission.
   </p>
-  <p className="mt-2">
-  <Link href="/privacy">Privacy Policy</Link>
-  <Link href="/terms">Terms of Use</Link>
-  </p>
+  <div className="mt-2 flex justify-center gap-4">
+    <Link href="/privacy">Privacy Policy</Link>
+    <Link href="/terms">Terms of Use</Link>
+  </div>
 </footer>
     </main>
   );
