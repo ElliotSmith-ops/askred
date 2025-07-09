@@ -43,8 +43,9 @@ export default function Home() {
           name="description"
           content="Reddit recommends. We link. You buy. Discover top-rated products backed by real Reddit threads."
         />
+        <link rel="icon" href="/favicon.ico" />
 
-        {/* Open Graph / Social */}
+        {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://www.buydit.org/" />
         <meta property="og:title" content="Buydit – Reddit-powered product picks" />
