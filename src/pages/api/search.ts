@@ -34,10 +34,13 @@ type Thread = {
   num_comments: number;
 };
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   const rawQuery = req.body.query;
   const query = rawQuery?.trim().toLowerCase();
-  if (!query) return res.status(400).json({ error: "Missing query" });
+  if (!query) {
+    res.status(400).json({ error: "Missing query" });
+    return;
+  }
 
   try {
     console.log("🔎 Checking Supabase for query:", query);
@@ -51,7 +54,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (cached && cached.gpt_result) {
       console.log("✅ Cache hit. Returning cached results.");
-      return res.status(200).json({ results: cached.gpt_result, posts: cached.reddit_urls || [] });
+      res.status(200).json({ results: cached.gpt_result, posts: cached.reddit_urls || [] });
+      return;
     }
 
     console.log("⚡ Searching via SerpAPI (google_light) for:", query);
@@ -75,7 +79,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         num_comments: 0,
       }));
 
-    async function processThread(thread: Thread): Promise<GPTProduct[]> {
+    const processThread = async (thread: Thread): Promise<GPTProduct[]> => {
       console.log("\n==============================");
       console.log("📄 Processing thread:", thread.url);
 
@@ -178,7 +182,7 @@ ${commentBlock}`.trim();
         console.error("❌ Error processing thread:", thread.url, "\n", threadErr);
         return [];
       }
-    }
+    };
 
     const threadPromises = threads.slice(0, 5).map(processThread);
     const parsedArrays = await Promise.all(threadPromises);
