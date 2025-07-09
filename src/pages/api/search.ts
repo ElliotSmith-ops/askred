@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import OpenAI from "openai";
 import axios from "axios";
 import { createClient } from "@supabase/supabase-js";
+import { reddit } from "@/lib/reddit";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const supabase = createClient(
@@ -16,22 +17,6 @@ type SerpResult = {
   title: string;
   link: string;
 };
-
-type RedditComment = {
-  kind: string;
-  data: {
-    body: string;
-  };
-};
-
-type RedditResponse = [
-  unknown,
-  {
-    data: {
-      children: RedditComment[];
-    };
-  }
-];
 
 type GPTProduct = {
   product: string;
@@ -104,40 +89,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return [];
         }
 
-        console.log("🌐 Fetching Reddit thread JSON...");
+        console.log("🌐 Fetching Reddit post via API...");
+        const submission = await reddit.getSubmission(postId).expandReplies({ depth: 1, limit: 20 });
+        const commentsRaw = submission.comments.map((c) => c.body).filter(Boolean).slice(0, 15);
 
-        let redditResponse;
-        try {
-          redditResponse = await axios.get<RedditResponse>(`https://www.reddit.com/comments/${postId}.json`, {
-            headers: {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
-            },
-          });
-        } catch (axiosErr) {
-          if (axios.isAxiosError(axiosErr) && axiosErr?.response?.status === 403) {
-            console.warn("🛑 Reddit 403 block. Skipping:", thread.url);
-            return [];
-          } else {
-            throw axiosErr;
-          }
-        }
+        console.log("💬 Top comment count:", commentsRaw.length);
 
-        const commentsRaw = redditResponse.data?.[1]?.data?.children || [];
-        console.log("💬 Raw comment count:", commentsRaw.length);
-
-        const topComments = commentsRaw
-          .filter((c: RedditComment) => c.kind === "t1" && c.data?.body)
-          .map((c: RedditComment) => c.data.body)
-          .slice(0, 15);
-
-        console.log("💬 Filtered top comment count:", topComments.length);
-
-        if (topComments.length === 0) {
+        if (commentsRaw.length === 0) {
           console.warn("⚠️ Skipping — no usable top comments.");
           return [];
         }
 
-        const commentBlock = topComments.map((c: string, i: number) => `${i + 1}. ${c}`).join("\n\n");
+        const commentBlock = commentsRaw.map((c, i) => `${i + 1}. ${c}`).join("\n\n");
         console.log("📓 Comment block preview (first 300 chars):", commentBlock.slice(0, 300));
 
         const prompt = `
