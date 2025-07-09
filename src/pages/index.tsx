@@ -1,10 +1,15 @@
 import { useState } from "react";
+import Link from "next/link";
+
+
 
 export default function Home() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState([]);
-  const [posts, setPosts] = useState([]);
+  const [results, setResults] = useState<
+  { product: string; reason: string; endorsement_score?: number; redditUrl?: string; amazonUrl?: string }[]
+>([]);
+
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -16,7 +21,6 @@ export default function Home() {
     });
     const data = await res.json();
     setResults(data.results || []);
-    setPosts(data.posts || []);
     setLoading(false);
   };
 
@@ -92,8 +96,8 @@ export default function Home() {
     This site uses Amazon affiliate links. We may earn a commission.
   </p>
   <p className="mt-2">
-    <a href="/privacy" className="underline hover:text-black">Privacy Policy</a> ·{" "}
-    <a href="/terms" className="underline hover:text-black">Terms of Use</a>
+  <Link href="/privacy">Privacy Policy</Link>
+  <Link href="/terms">Terms of Use</Link>
   </p>
 </footer>
     </main>

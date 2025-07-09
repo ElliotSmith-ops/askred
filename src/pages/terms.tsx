@@ -8,7 +8,7 @@
         <p className="mt-4">Welcome to AskRed, a tool that curates Reddit-based product recommendations. By using this website (askred.io), you agree to the following terms:</p>
   
         <h2 className="text-xl font-semibold mt-6 mb-2">1. No Warranty</h2>
-        <p>The content is provided “as is.” We do not guarantee accuracy or suitability for any purpose.</p>
+        <p>The content is provided &quot;as is.&quot; We do not guarantee accuracy or suitability for any purpose.</p>
   
         <h2 className="text-xl font-semibold mt-6 mb-2">2. Amazon Affiliate Program</h2>
         <p>We participate in the Amazon Associates program and may earn from qualifying purchases.</p>

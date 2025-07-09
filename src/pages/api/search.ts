@@ -10,6 +10,26 @@ const supabase = createClient(
 );
 const SERPAPI_KEY = process.env.SERPAPI_KEY!;
 
+type SerpResult = {
+  title: string;
+  link: string;
+};
+
+type RedditComment = {
+  kind: string;
+  data: {
+    body: string;
+  };
+};
+
+type GPTProduct = {
+  product: string;
+  reason: string;
+  endorsement_score?: number;
+  redditUrl: string;
+  amazonUrl: string;
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const rawQuery = req.body.query;
   const query = rawQuery?.trim().toLowerCase();
@@ -34,16 +54,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const serpUrl = `https://serpapi.com/search.json?q=${encodeURIComponent(query + " product recommendations site:reddit.com")}&api_key=${SERPAPI_KEY}&num=10`;
     const serpResponse = await axios.get(serpUrl);
-    const serpResults = serpResponse.data?.organic_results || [];
+    const serpResults: SerpResult[] = serpResponse.data?.organic_results || [];
 
     console.log("🔍 google_light results found:", serpResults.length);
-    serpResults.forEach((r: any, i: number) => {
+    serpResults.forEach((r: SerpResult, i: number) => {
       console.log(`  ${i + 1}. ${r.title} — ${r.link}`);
     });
 
     const threads = serpResults
-      .filter((r: any) => r.link?.includes("reddit.com/r/"))
-      .map((r: any) => ({
+      .filter((r: SerpResult) => r.link?.includes("reddit.com/r/"))
+      .map((r: SerpResult) => ({
         title: r.title,
         url: r.link,
         subreddit: r.link.split("/r/")[1]?.split("/")[0] || "reddit",
@@ -51,7 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         num_comments: 0,
       }));
 
-    async function processThread(thread: any) {
+    async function processThread(thread: { title: string; url: string; subreddit: string; score: number; num_comments: number }): Promise<GPTProduct[]> {
       console.log("\n==============================");
       console.log("📄 Processing thread:", thread.url);
 
@@ -71,12 +91,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
 
         const dataLayer = redditResponse.data?.[1]?.data;
-        const commentsRaw = dataLayer?.children;
+        const commentsRaw: RedditComment[] = dataLayer?.children;
         console.log("💬 Raw comment count:", commentsRaw?.length);
 
         const topComments = (commentsRaw || [])
-          .filter((c: any) => c.kind === "t1" && c.data?.body)
-          .map((c: any) => c.data.body)
+          .filter((c: RedditComment) => c.kind === "t1" && c.data?.body)
+          .map((c: RedditComment) => c.data.body)
           .slice(0, 15);
 
         console.log("💬 Filtered top comment count:", topComments.length);
@@ -86,7 +106,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return [];
         }
 
-        const commentBlock = topComments.map((c, i) => `${i + 1}. ${c}`).join("\n\n");
+        const commentBlock = topComments.map((c: string, i: number) => `${i + 1}. ${c}`).join("\n\n");
         console.log("📓 Comment block preview (first 300 chars):", commentBlock.slice(0, 300));
 
         const prompt = `
@@ -138,13 +158,13 @@ ${commentBlock}`.trim();
         const raw = completion.choices?.[0]?.message?.content?.trim() || "[]";
         console.log("🨠 GPT Raw Output (first 300 chars):", raw.slice(0, 300));
 
-        let parsed = [];
+        let parsed: GPTProduct[] = [];
         try {
           const jsonStart = raw.indexOf("[");
           const jsonEnd = raw.lastIndexOf("]");
           const cleanJson = raw.slice(jsonStart, jsonEnd + 1);
 
-          parsed = JSON.parse(cleanJson).map((item: any) => ({
+          parsed = JSON.parse(cleanJson).map((item: GPTProduct) => ({
             product: item.product,
             reason: item.reason,
             endorsement_score: item.endorsement_score || null,
