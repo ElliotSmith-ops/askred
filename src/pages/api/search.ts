@@ -113,34 +113,34 @@ const expandedSubmission = await (reddit.getSubmission(postId) as any).expandRep
         console.log("📓 Comment block preview (first 300 chars):", commentBlock.slice(0, 300));
 
         const prompt = `
-You are an assistant extracting only **clearly endorsed product recommendations** from Reddit comments about "${query}".
-
-Only include products that are explicitly recommended or praised as something the commenter has **personally used** or strongly supports.
-
-Skip vague mentions, jokes, comparisons, speculation, or off-topic products. It’s perfectly acceptable to return an empty list if no clear recommendations are found.
-
-For each recommendation, return:
-- "product": The name of the product being recommended.
-- "reason": A brief explanation of why users recommended it.
-- "endorsement_score": A number from 0 to 1 representing the strength of the endorsement:
-  - 0.9–1.0 = Strong, repeated, enthusiastic endorsements by multiple users
-  - 0.6–0.8 = Recommended clearly by at least one user
-  - 0.3–0.5 = Mentioned with some endorsement but less certainty or consensus
-  - 0.0–0.2 = Do not include these
-
-Output must be valid JSON — no markdown, no intro, no trailing comments. Return only the array.
-
-Example:
-[
-  {
-    "product": "Firestone Pond Liner",
-    "reason": "Multiple users said it's durable, UV-resistant, and fish-safe.",
-    "endorsement_score": 0.94
-  }
-]
-
-Comments:
-${commentBlock}`.trim();
+        You are an assistant extracting only **clearly endorsed product recommendations** from Reddit comments about "${query}".
+        
+        Only include products that are explicitly recommended or praised as something the commenter has **personally used** or strongly supports.
+        
+        Skip vague mentions, jokes, comparisons, speculation, or off-topic products. It’s perfectly acceptable to return an empty list if no clear recommendations are found.
+        
+        For each recommendation, return:
+        - "product": The name of the product being recommended.
+        - "reason": A brief explanation of why users recommended it. Include one or two direct quotes from Reddit users in the reason. Wrap quotes in curly smart quotes (“ and ”) instead of escaping them.
+        - "endorsement_score": A number from 0 to 1 representing the strength of the endorsement:
+          - 0.9–1.0 = Strong, repeated, enthusiastic endorsements by multiple users
+          - 0.6–0.8 = Recommended clearly by at least one user
+          - 0.3–0.5 = Mentioned with some endorsement but less certainty or consensus
+          - 0.0–0.2 = Do not include these
+        
+        Output must be valid JSON — no markdown, no intro, no trailing comments. Return only the array.
+        
+        Example:
+        [
+          {
+            "product": "Firestone Pond Liner",
+            "reason": "Multiple users said it's durable, UV-resistant, and fish-safe. One user wrote, \\"I've had it in my pond for 6 years with no issues.\\"",
+            "endorsement_score": 0.94
+          }
+        ]
+        
+        Comments:
+        ${commentBlock}`.trim();
 
         console.log("🤖 Calling GPT...");
         const completion = await openai.chat.completions.create({

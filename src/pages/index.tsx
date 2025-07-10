@@ -8,6 +8,7 @@ import { event as gaEvent } from '../lib/gtag';
 export default function Home() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showDelayNotice, setShowDelayNotice] = useState(false);
   const [results, setResults] = useState<
     {
       product: string;
@@ -24,13 +25,24 @@ export default function Home() {
       category: 'search',
       label: query,
     });    
+
     if (!query.trim()) return;
+
     setLoading(true);
+    setShowDelayNotice(false);
+
+    const delayTimer = setTimeout(() => {
+      setShowDelayNotice(true);
+    }, 1200);
+
     const res = await fetch("/api/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query }),
     });
+
+    clearTimeout(delayTimer);
+
     const data = await res.json();
     setResults(data.results || []);
     setLoading(false);
@@ -96,9 +108,14 @@ export default function Home() {
         <input
           type="text"
           className="w-full text-black max-w-md p-3 border rounded mb-4"
-          placeholder="What are you looking for? (e.g. Guitars, Moisturizer)"
+          placeholder="What are you looking for? (e.g. Coffee Grinder, Keyboard)"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && query.trim()) {
+              handleSearch();
+            }
+          }}
         />
 
         <button
@@ -109,11 +126,35 @@ export default function Home() {
           {loading ? "Searching..." : "Search"}
         </button>
 
+        {loading && showDelayNotice && (
+          <p className="text-sm text-gray-600 text-center mt-2 max-w-md">
+            ⏳ This might be a first-time search. Please allow ~10 seconds while we gather fresh Reddit recommendations.
+          </p>
+        )}
+
         <div className="w-full max-w-md mt-6 space-y-4">
           {sortedResults.map((item, idx) => (
             <div key={idx} className="bg-white shadow-md rounded p-4">
-              <h2 className="font-semibold text-lg mb-1 text-[#FF4500]">
+              <h2 className="font-semibold text-lg mb-1">
+                {item.amazonUrl ? (
+                <a
+                  href={item.amazonUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() =>
+                  gaEvent({
+                  action: 'affiliate_click',
+                  category: 'product_engagement',
+                  label: item.product,
+                  })
+                  }
+                  className="text-[#FF9900] hover:underline"
+                >
                 {item.product}
+                </a>
+                ) : (
+                <span className="text-[#FF4500]">{item.product}</span>
+                )}
               </h2>
               <p className="text-black mb-2">{item.reason}</p>
 
