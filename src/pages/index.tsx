@@ -124,30 +124,38 @@ export default function Home() {
               )}
 
               <div className="flex gap-3">
-                {item.redditUrl && (
-                  <a
-                    href={item.redditUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 underline"
-                  >
-                    Reddit Thread
-                  </a>
-                )}
-                {item.amazonUrl && (
-                  <a
-                  href={item.amazonUrl}
+              {item.redditUrl && (
+                <a
+                  href={item.redditUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() =>
-                    gaEvent({
-                      action: 'affiliate_click',
-                      category: 'product_engagement',
-                      label: item.product, // or product title
-                    })
-                  }
+                  gaEvent({
+                    action: 'reddit_thread_click',
+                    category: 'product_engagement',
+                    label: item.product,
+                  })
+                }
+                className="inline-block px-4 py-2 rounded text-white font-semibold bg-[#FF4500] hover:bg-[#e03d00] transition"
+              >
+                View Reddit Thread
+              </a>
+                )}
+                {item.amazonUrl && (
+                  <a
+                    href={item.amazonUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() =>
+                  gaEvent({
+                  action: 'affiliate_click',
+                  category: 'product_engagement',
+                  label: item.product,
+                })
+                }
+                className="inline-block px-4 py-2 rounded text-white font-semibold bg-[#FF9900] hover:bg-[#e68a00] transition"
                 >
-                  View on Amazon
+                View on Amazon
                 </a>
                 )}
               </div>
