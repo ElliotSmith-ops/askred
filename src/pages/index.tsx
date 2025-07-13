@@ -4,7 +4,6 @@ import Image from "next/image";
 import Head from "next/head";
 import { event as gaEvent } from '../lib/gtag';
 
-
 export default function Home() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,7 +23,7 @@ export default function Home() {
       action: 'search_submitted',
       category: 'search',
       label: query,
-    });    
+    });
 
     if (!query.trim()) return;
 
@@ -98,9 +97,9 @@ export default function Home() {
           alt="Buydit Logo"
           width={200}
           height={60}
-          className="mb-6 mt-4"
+          className="mb-4 mt-4"
         />
-
+        
         <p className="text-center text-gray-700 font-bold mb-6">
           Reddit recommends. We link. You buy.
         </p>
@@ -137,86 +136,79 @@ export default function Home() {
             <div key={idx} className="bg-white shadow-md rounded p-4">
               <h2 className="font-semibold text-lg mb-1">
                 {item.amazonUrl ? (
-                <a
-                  href={item.amazonUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() =>
-                  gaEvent({
-                  action: 'affiliate_click',
-                  category: 'product_engagement',
-                  label: item.product,
-                  })
-                  }
-                  className="text-[#FF9900] hover:underline"
-                >
-                {item.product}
-                </a>
-                ) : (
-                <span className="text-[#FF4500]">{item.product}</span>
-                )}
-              </h2>
-              <p className="text-black mb-2">{item.reason}</p>
-
-              {item.endorsement_score != null && (
-                <p className="text-sm text-gray-500 mb-2">
-                  Endorsement Strength: {(item.endorsement_score * 100).toFixed(0)}%
-                </p>
-              )}
-
-              <div className="flex gap-3">
-              {item.redditUrl && (
-                <a
-                  href={item.redditUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() =>
-                  gaEvent({
-                    action: 'reddit_thread_click',
-                    category: 'product_engagement',
-                    label: item.product,
-                  })
-                }
-                className="inline-block px-4 py-2 rounded text-white font-semibold bg-[#FF4500] hover:bg-[#e03d00] transition"
-              >
-                View Reddit Thread
-              </a>
-                )}
-                {item.amazonUrl && (
+                  <>
+                <div className="flex items-center gap-2 flex-wrap">
                   <a
                     href={item.amazonUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() =>
-                  gaEvent({
-                  action: 'affiliate_click',
-                  category: 'product_engagement',
-                  label: item.product,
-                })
-                }
-                className="inline-block px-4 py-2 rounded text-white font-semibold bg-[#FF9900] hover:bg-[#e68a00] transition"
-                >
-                View on Amazon
-                </a>
+                    gaEvent({
+                      action: 'affiliate_click',
+                      category: 'product_engagement',
+                      label: item.product,
+                    })
+                    }
+                    className="text-[#f97316] hover:underline"
+                    >
+                    {item.product}
+                    </a>
+                  <span className="text-xs text-gray-500 font-normal antialiased">(paid link)</span>
+                  </div>
+                  </>
+                ) : (
+                  <span className="text-[#FF4500]">{item.product}</span>
+                )}
+              </h2>
+              <p className="text-black mb-2">{item.reason}</p>
+
+              {item.endorsement_score != null && (
+                <p className="text-sm text-black mb-2">
+                <span className="font-extrabold">Endorsement Strength:</span> {(item.endorsement_score * 100).toFixed(0)}%
+                </p>
+              )}
+
+              <div className="flex gap-3">
+                {item.redditUrl && (
+                  <a
+                    href={item.redditUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() =>
+                      gaEvent({
+                        action: 'reddit_thread_click',
+                        category: 'product_engagement',
+                        label: item.product,
+                      })
+                    }
+                    className="inline-block px-4 py-2 rounded text-white font-semibold bg-[#FF4500] hover:bg-[#e03d00] transition"
+                  >
+                    View Reddit Thread
+                  </a>
+                )}
+                {item.amazonUrl && (
+                  <>
+                    <a
+                      href={item.amazonUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() =>
+                        gaEvent({
+                          action: 'affiliate_click',
+                          category: 'product_engagement',
+                          label: item.product,
+                        })
+                      }
+                      className="inline-block px-4 py-2 rounded text-white font-semibold bg-[#FF9900] hover:bg-[#e68a00] transition"
+                    >
+                      View on Amazon
+                    </a>
+                    <span className="text-xs text-gray-500 self-center">(paid link)</span>
+                  </>
                 )}
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Buy Me a Coffee Button */}
-        <div className="mt-10">
-          <a
-            href="https://www.buymeacoffee.com/ElliotS"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <img
-              src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
-              alt="Buy Me A Coffee"
-              style={{ height: "60px", width: "217px" }}
-            />
-          </a>
         </div>
 
         <footer className="mt-10 text-sm text-gray-500 text-center">
