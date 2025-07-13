@@ -4,7 +4,7 @@ export default function Privacy() {
         <h1 className="text-2xl font-bold mb-4">Privacy Policy</h1>
         <p><strong>Effective Date:</strong> July 8, 2025</p>
   
-        <p className="mt-4">AskRed (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) respects your privacy. This Privacy Policy explains how we collect, use, and share information when you use our website at askred.io (the &quot;Site&quot;).</p>
+        <p className="mt-4">Buydit (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) respects your privacy. This Privacy Policy explains how we collect, use, and share information when you use our website at askred.io (the &quot;Site&quot;).</p>
   
         <h2 className="text-xl font-semibold mt-6 mb-2">What We Collect</h2>
         <ul className="list-disc pl-5">
@@ -21,7 +21,7 @@ export default function Privacy() {
         </ul>
   
         <h2 className="text-xl font-semibold mt-6 mb-2">Amazon Associates</h2>
-        <p>AskRed is a participant in the Amazon Services LLC Associates Program. As an Amazon Associate, we earn from qualifying purchases.</p>
+        <p>Buydit is a participant in the Amazon Services LLC Associates Program. As an Amazon Associate, we earn from qualifying purchases.</p>
   
         <h2 className="text-xl font-semibold mt-6 mb-2">Your Data Rights</h2>
         <p>We do not sell your data. If you have concerns or questions, you can contact us at [your email].</p>
