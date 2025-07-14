@@ -93,13 +93,13 @@ export default function Home() {
 
       <main className="min-h-screen bg-gray-100 p-4 flex flex-col items-center">
         <Image
-          src="/buydit.png"
+          src="/buyditorglogo.png"
           alt="Buydit Logo"
           width={200}
           height={60}
           className="mb-4 mt-4"
         />
-        
+
         <p className="text-center text-gray-700 font-bold mb-6">
           Reddit recommends. We link. You buy.
         </p>
