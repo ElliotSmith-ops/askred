@@ -93,7 +93,7 @@ export default function Home() {
 
       <main className="min-h-screen bg-gray-100 p-4 flex flex-col items-center">
         <Image
-          src="/buyditorglogo.png"
+          src="/Buyditorglogo.png"
           alt="Buydit Logo"
           width={200}
           height={60}
