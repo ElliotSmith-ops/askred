@@ -34,13 +34,28 @@ type Thread = {
   num_comments: number;
 };
 
+type MinimalSubmission = {
+    expandReplies: (opts: { depth: number; limit: number }) => Promise<{
+      comments: { body: string }[];
+    }>;
+  };
+  
+  
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
+  if (typeof req.body.query !== "string") {
+    console.error("❌ Invalid query type received:", req.body.query);
+    res.status(400).json({ error: "Invalid query format" });
+    return;
+  }
+
   const rawQuery = req.body.query;
-  const query = rawQuery?.trim().toLowerCase();
+  const query = rawQuery.trim().toLowerCase();
   if (!query) {
     res.status(400).json({ error: "Missing query" });
     return;
   }
+  console.log("🔍 Incoming query payload:", req.body.query);
 
   try {
     console.log("🔎 Checking Supabase for query:", query);
@@ -79,6 +94,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         num_comments: 0,
       }));
 
+    const isVague = (name: string) => {
+      return (
+        name.trim().split(/\s+/).length <= 2 &&
+        name.length <= 20 &&
+        !name.toLowerCase().includes(query)
+      );
+    };
+
     const processThread = async (thread: Thread): Promise<GPTProduct[]> => {
       console.log("\n==============================");
       console.log("📄 Processing thread:", thread.url);
@@ -94,9 +117,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         console.log("🌐 Fetching Reddit post via API...");
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const expandedSubmission = await (reddit.getSubmission(postId) as any).expandReplies({ depth: 1, limit: 20 });
-
+        const submission = reddit.getSubmission(postId) as MinimalSubmission;
+        const expandedSubmission = await submission.expandReplies({ depth: 1, limit: 20 });
         const commentsRaw: string[] = expandedSubmission.comments
           .map((c: { body: string }) => c.body)
           .filter(Boolean)
@@ -114,11 +136,11 @@ const expandedSubmission = await (reddit.getSubmission(postId) as any).expandRep
 
         const prompt = `
         You are an assistant extracting only **clearly endorsed product recommendations** from Reddit comments about "${query}".
-        
+
         Only include products that are explicitly recommended or praised as something the commenter has **personally used** or strongly supports.
-        
+
         Skip vague mentions, jokes, comparisons, speculation, or off-topic products. It’s perfectly acceptable to return an empty list if no clear recommendations are found.
-        
+
         For each recommendation, return:
         - "product": The name of the product being recommended.
         - "reason": A brief explanation of why users recommended it. Include one or two direct quotes from Reddit users in the reason. Wrap quotes in curly smart quotes (“ and ”) instead of escaping them.
@@ -127,18 +149,18 @@ const expandedSubmission = await (reddit.getSubmission(postId) as any).expandRep
           - 0.6–0.8 = Recommended clearly by at least one user
           - 0.3–0.5 = Mentioned with some endorsement but less certainty or consensus
           - 0.0–0.2 = Do not include these
-        
+
         Output must be valid JSON — no markdown, no intro, no trailing comments. Return only the array.
-        
+
         Example:
         [
           {
             "product": "Firestone Pond Liner",
-            "reason": "Multiple users said it's durable, UV-resistant, and fish-safe. One user wrote, \\"I've had it in my pond for 6 years with no issues.\\"",
+            "reason": "Multiple users said it's durable, UV-resistant, and fish-safe. One user wrote, \"I've had it in my pond for 6 years with no issues.\"",
             "endorsement_score": 0.94
           }
         ]
-        
+
         Comments:
         ${commentBlock}`.trim();
 
@@ -167,13 +189,18 @@ const expandedSubmission = await (reddit.getSubmission(postId) as any).expandRep
           const jsonEnd = raw.lastIndexOf("]");
           const cleanJson = raw.slice(jsonStart, jsonEnd + 1);
 
-          parsed = JSON.parse(cleanJson).map((item: Omit<GPTProduct, "redditUrl" | "amazonUrl">) => ({
-            product: item.product,
-            reason: item.reason,
-            endorsement_score: item.endorsement_score || null,
-            redditUrl: thread.url,
-            amazonUrl: `https://www.amazon.com/s?k=${encodeURIComponent(item.product)}&tag=buyit0d40-20`,
-          }));
+          parsed = JSON.parse(cleanJson).map((item: Omit<GPTProduct, "redditUrl" | "amazonUrl">) => {
+            const productName = item.product;
+            const enhancedSearch = isVague(productName) ? `${productName} ${query}` : productName;
+
+            return {
+              product: productName,
+              reason: item.reason,
+              endorsement_score: item.endorsement_score || null,
+              redditUrl: thread.url,
+              amazonUrl: `https://www.amazon.com/s?k=${encodeURIComponent(enhancedSearch)}&tag=buyit0d40-20`,
+            };
+          });
 
           console.log("✅ Parsed product count:", parsed.length);
         } catch (jsonErr) {
@@ -195,12 +222,20 @@ const expandedSubmission = await (reddit.getSubmission(postId) as any).expandRep
 
     console.log("📦 Total parsed product results:", allParsedResults.length);
 
-    const { error: insertError } = await supabase.from("search_queries").insert({
-      query,
-      reddit_urls: threads,
-      gpt_result: allParsedResults,
-      last_updated: new Date().toISOString(),
-    });
+    console.log("🧪 Inserting into Supabase:", {
+        query,
+        reddit_urls: threads,
+        gpt_result: allParsedResults,
+      });
+
+      const { error: insertError } = await supabase.from("search_queries").insert([
+        {
+          query,
+          reddit_urls: threads,
+          gpt_result: allParsedResults,
+          last_updated: new Date().toISOString(),
+        }
+      ]);
 
     if (insertError) {
       console.error("❌ Supabase insert error:", insertError);
