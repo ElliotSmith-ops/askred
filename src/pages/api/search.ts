@@ -34,6 +34,22 @@ type Thread = {
 
 type RedditComment = { data: { body?: string } };
 
+const extractFromAmazonUrl = (url: string): string | null => {
+  try {
+    const u = new URL(url);
+    if (!u.hostname.includes("amazon.")) return null;
+
+    const pathParts = u.pathname.split("/");
+    const titleIndex = pathParts.findIndex(p => p === "dp") - 1;
+    const title = titleIndex >= 0 ? pathParts[titleIndex].replace(/[-_]/g, " ") : "";
+
+    const keywords = u.searchParams.get("keywords")?.replace(/[%+]/g, " ");
+    return title || keywords || null;
+  } catch {
+    return null;
+  }
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (typeof req.body.query !== "string") {
     console.error("❌ Invalid query type received:", req.body.query);
@@ -42,7 +58,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const rawQuery = req.body.query;
-  const query = rawQuery.trim().toLowerCase();
+  let query = rawQuery.trim().toLowerCase();
+
+  const extracted = extractFromAmazonUrl(query);
+  if (extracted) {
+    console.log("🔍 Extracted keywords from Amazon link:", extracted);
+    query = extracted.trim().toLowerCase();
+  }
+
   if (!query) {
     res.status(400).json({ error: "Missing query" });
     return;
@@ -217,8 +240,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         return parsed;
-      } catch (threadErr) {
-        console.error("❌ Error processing thread:", thread.url, "\n", threadErr);
+      } catch {
+        console.error("❌ Error processing thread:", thread.url);
         return [];
       }
     };
@@ -251,8 +274,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     res.status(200).json({ results: allParsedResults, posts: threads });
-  } catch (err) {
-    console.error("🔥 Fatal error in /api/search:", err);
+  } catch (error) {
+    console.error("🔥 Fatal error in /api/search:", error);
     res.status(500).json({ error: "Search failed" });
   }
 }
