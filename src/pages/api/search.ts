@@ -2,7 +2,6 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import OpenAI from "openai";
 import axios from "axios";
 import { createClient } from "@supabase/supabase-js";
-import { reddit } from "@/lib/reddit";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const supabase = createClient(
@@ -12,7 +11,6 @@ const supabase = createClient(
 const SERPAPI_KEY = process.env.SERPAPI_KEY!;
 
 // Types
-
 type SerpResult = {
   title: string;
   link: string;
@@ -33,14 +31,6 @@ type Thread = {
   score: number;
   num_comments: number;
 };
-
-type MinimalSubmission = {
-    expandReplies: (opts: { depth: number; limit: number }) => Promise<{
-      comments: { body: string }[];
-    }>;
-  };
-  
-  
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (typeof req.body.query !== "string") {
@@ -102,6 +92,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
     };
 
+    const fetchRedditComments = async (postId: string): Promise<string[]> => {
+      const res = await fetch(`https://www.reddit.com/comments/${postId}.json`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+          'Accept': 'application/json',
+        }
+      });
+
+      if (res.status !== 200) throw new Error(`Reddit fetch failed with status ${res.status}`);
+
+      const data = await res.json();
+      return data?.[1]?.data?.children
+        ?.map((c: any) => c.data?.body)
+        .filter((b: string) => b && b.length > 20)
+        .slice(0, 15) || [];
+    };
+
     const processThread = async (thread: Thread): Promise<GPTProduct[]> => {
       console.log("\n==============================");
       console.log("📄 Processing thread:", thread.url);
@@ -116,14 +123,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return [];
         }
 
-        console.log("🌐 Fetching Reddit post via API...");
-        const submission = reddit.getSubmission(postId) as MinimalSubmission;
-        const expandedSubmission = await submission.expandReplies({ depth: 1, limit: 20 });
-        const commentsRaw: string[] = expandedSubmission.comments
-          .map((c: { body: string }) => c.body)
-          .filter(Boolean)
-          .slice(0, 15);
-
+        console.log("🌐 Fetching Reddit post via direct fetch...");
+        const commentsRaw = await fetchRedditComments(postId);
         console.log("💬 Top comment count:", commentsRaw.length);
 
         if (commentsRaw.length === 0) {
@@ -223,19 +224,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log("📦 Total parsed product results:", allParsedResults.length);
 
     console.log("🧪 Inserting into Supabase:", {
+      query,
+      reddit_urls: threads,
+      gpt_result: allParsedResults,
+    });
+
+    const { error: insertError } = await supabase.from("search_queries").insert([
+      {
         query,
         reddit_urls: threads,
         gpt_result: allParsedResults,
-      });
-
-      const { error: insertError } = await supabase.from("search_queries").insert([
-        {
-          query,
-          reddit_urls: threads,
-          gpt_result: allParsedResults,
-          last_updated: new Date().toISOString(),
-        }
-      ]);
+        last_updated: new Date().toISOString(),
+      }
+    ]);
 
     if (insertError) {
       console.error("❌ Supabase insert error:", insertError);
