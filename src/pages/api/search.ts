@@ -104,7 +104,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const data = await res.json();
       return data?.[1]?.data?.children
-        ?.map((c: any) => c.data?.body)
+        ?.map((c: { data: { body: string } }) => c.data?.body)
         .filter((b: string) => b && b.length > 20)
         .slice(0, 15) || [];
     };
