@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import OpenAI from "openai";
 import axios from "axios";
 import { createClient } from "@supabase/supabase-js";
+import { getRedditToken } from "@/lib/redditClient";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const supabase = createClient(
@@ -10,7 +11,6 @@ const supabase = createClient(
 );
 const SERPAPI_KEY = process.env.SERPAPI_KEY!;
 
-// Types
 type SerpResult = {
   title: string;
   link: string;
@@ -31,6 +31,8 @@ type Thread = {
   score: number;
   num_comments: number;
 };
+
+type RedditComment = { data: { body?: string } };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (typeof req.body.query !== "string") {
@@ -93,19 +95,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     const fetchRedditComments = async (postId: string): Promise<string[]> => {
-      const res = await fetch(`https://www.reddit.com/comments/${postId}.json`, {
+      const token = await getRedditToken();
+
+      const response = await fetch(`https://oauth.reddit.com/comments/${postId}`, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
-          'Accept': 'application/json',
-        }
+          Authorization: `Bearer ${token}`,
+          "User-Agent": process.env.REDDIT_USER_AGENT!,
+        },
       });
 
-      if (res.status !== 200) throw new Error(`Reddit fetch failed with status ${res.status}`);
+      if (response.status !== 200) {
+        throw new Error(`Reddit fetch failed with status ${response.status}`);
+      }
 
-      const data = await res.json();
-      return data?.[1]?.data?.children
-        ?.map((c: { data: { body: string } }) => c.data?.body)
-        .filter((b: string) => b && b.length > 20)
+      const json = await response.json();
+      return json?.[1]?.data?.children
+        ?.map((c: RedditComment) => c.data?.body)
+        .filter((b: string | undefined): b is string => !!b && b.length > 20)
         .slice(0, 15) || [];
     };
 
