@@ -117,6 +117,10 @@ export default function Home() {
           }}
         />
 
+        <p className="text-xs text-gray-600 -mt-3 mb-4">
+          (URLs aren’t fully supported yet — for best results, enter a product name)
+        </p>
+
         <button
           onClick={() => handleSearch()}
 
