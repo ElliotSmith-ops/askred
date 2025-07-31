@@ -104,37 +104,121 @@ export default function Home() {
         <Image src="/Buyditorglogo.png" alt="Buydit Logo" width={200} height={60} className="mb-4 mt-4" />
         <p className="text-center text-gray-700 font-bold mb-6">Reddit recommends. We link. You buy.</p>
 
-        <input
-          type="text"
-          className="w-full text-black max-w-md p-3 border rounded mb-4"
-          placeholder="What are you looking for? (e.g. Coffee Grinder, Keyboard)"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && query.trim()) {
-              handleSearch();
-            }
-          }}
-        />
+        <div className="relative w-full max-w-md mb-4">
+  <input
+    type="text"
+    className="w-full text-black p-3 pr-24 border rounded"
+    placeholder="What are you looking for? (e.g. Coffee Grinder)"
+    value={query}
+    onChange={(e) => setQuery(e.target.value)}
+    onKeyDown={(e) => {
+      if (e.key === "Enter" && query.trim()) {
+        handleSearch();
+      }
+    }}
+  />
+  <button
+    onClick={() => handleSearch()}
+    className="absolute top-1/2 right-2 -translate-y-1/2 bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+    disabled={loading}
+  >
+    {loading ? "..." : "Search"}
+  </button>
+</div>
+
 
         <p className="text-xs text-gray-600 -mt-3 mb-4">
           (URLs aren’t fully supported yet — for best results, enter a product name)
         </p>
-
-        <button
-          onClick={() => handleSearch()}
-
-          className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-          disabled={loading}
-        >
-          {loading ? "Searching..." : "Search"}
-        </button>
+        <Link
+  href="/topics"
+  className="bg-[#FF9900] hover:bg-[#e68a00] text-white font-semibold px-4 py-2 rounded transition whitespace-nowrap"
+>
+  Explore Popular Searches
+</Link>
 
         {loading && showDelayNotice && (
           <p className="text-sm text-gray-600 text-center mt-2 max-w-md">
             ⏳ This might be a first-time search. Please allow ~10 seconds while we gather fresh Reddit recommendations.
           </p>
         )}
+
+        <div className="w-full max-w-md mt-6 space-y-4">
+          {sortedResults.map((item, idx) => (
+            <div key={idx} className="bg-white shadow-md rounded p-4">
+              <h2 className="font-semibold text-lg mb-1">
+                {item.amazonUrl ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <a
+                      href={item.amazonUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() =>
+                        gaEvent({
+                          action: 'affiliate_click',
+                          category: 'product_engagement',
+                          label: item.product,
+                        })
+                      }
+                      className="text-[#f97316] hover:underline"
+                    >
+                      {item.product}
+                    </a>
+                  </div>
+                ) : (
+                  <span className="text-[#FF4500]">{item.product}</span>
+                )}
+              </h2>
+              <p className="text-black mb-2">{item.reason}</p>
+              {item.endorsement_score != null && (
+                <p className="text-sm text-black mb-2">
+                  <span className="font-extrabold">Endorsement Strength:</span> {(item.endorsement_score * 100).toFixed(0)}%
+                </p>
+              )}
+              <div className="flex gap-3">
+                {item.redditUrl && (
+                  <a
+                    href={item.redditUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() =>
+                      gaEvent({
+                        action: 'reddit_thread_click',
+                        category: 'product_engagement',
+                        label: item.product,
+                      })
+                    }
+                    className="inline-block px-4 py-2 rounded text-white font-semibold bg-[#FF4500] hover:bg-[#e03d00] transition"
+                  >
+                    View Reddit Thread
+                  </a>
+                )}
+                {item.amazonUrl && (
+                  <>
+                    <a
+                      href={item.amazonUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() =>
+                        gaEvent({
+                          action: 'affiliate_click',
+                          category: 'product_engagement',
+                          label: item.product,
+                        })
+                      }
+                      className="inline-block px-4 py-2 rounded text-white font-semibold bg-[#FF9900] hover:bg-[#e68a00] transition"
+                    >
+                      View on Amazon
+                    </a>
+                    <p style={{ fontSize: "0.75rem", color: "#888", marginTop: "0.25rem" }}>
+                    This link may earn us a few cents and keeps the site ad-free ❤️
+</p>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
 
         {results.length > 0 && (
           <motion.div
@@ -217,83 +301,6 @@ export default function Home() {
             </div>
           </motion.div>
         )}
-
-        <div className="w-full max-w-md mt-6 space-y-4">
-          {sortedResults.map((item, idx) => (
-            <div key={idx} className="bg-white shadow-md rounded p-4">
-              <h2 className="font-semibold text-lg mb-1">
-                {item.amazonUrl ? (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <a
-                      href={item.amazonUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() =>
-                        gaEvent({
-                          action: 'affiliate_click',
-                          category: 'product_engagement',
-                          label: item.product,
-                        })
-                      }
-                      className="text-[#f97316] hover:underline"
-                    >
-                      {item.product}
-                    </a>
-                  </div>
-                ) : (
-                  <span className="text-[#FF4500]">{item.product}</span>
-                )}
-              </h2>
-              <p className="text-black mb-2">{item.reason}</p>
-              {item.endorsement_score != null && (
-                <p className="text-sm text-black mb-2">
-                  <span className="font-extrabold">Endorsement Strength:</span> {(item.endorsement_score * 100).toFixed(0)}%
-                </p>
-              )}
-              <div className="flex gap-3">
-                {item.redditUrl && (
-                  <a
-                    href={item.redditUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() =>
-                      gaEvent({
-                        action: 'reddit_thread_click',
-                        category: 'product_engagement',
-                        label: item.product,
-                      })
-                    }
-                    className="inline-block px-4 py-2 rounded text-white font-semibold bg-[#FF4500] hover:bg-[#e03d00] transition"
-                  >
-                    View Reddit Thread
-                  </a>
-                )}
-                {item.amazonUrl && (
-                  <>
-                    <a
-                      href={item.amazonUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() =>
-                        gaEvent({
-                          action: 'affiliate_click',
-                          category: 'product_engagement',
-                          label: item.product,
-                        })
-                      }
-                      className="inline-block px-4 py-2 rounded text-white font-semibold bg-[#FF9900] hover:bg-[#e68a00] transition"
-                    >
-                      View on Amazon
-                    </a>
-                    <p style={{ fontSize: "0.75rem", color: "#888", marginTop: "0.25rem" }}>
-                    This link may earn us a few cents and keeps the site ad-free ❤️
-</p>
-                  </>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
 
         <button
   onClick={() => {
