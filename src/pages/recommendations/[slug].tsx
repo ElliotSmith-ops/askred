@@ -18,6 +18,8 @@ import {
 export default function RecommendationPage() {
   const router = useRouter();
   const { slug } = router.query;
+  const [showShareOptions, setShowShareOptions] = useState(false);
+
 
   const readableQuery = typeof slug === "string"
     ? slug.replace(/-/g, " ").replace(/reddit$/i, "").trim()
@@ -33,6 +35,12 @@ export default function RecommendationPage() {
     redditUrl?: string;
     amazonUrl?: string;
   }[]>([]);
+
+  const resetPage = () => {
+    setQuery("");
+    setResults([]);
+    router.push("/", undefined, { shallow: true });
+  };
 
   const handleSearch = useCallback(async (inputQuery?: string) => {
     const searchQuery = (inputQuery ?? query).toString();
@@ -73,7 +81,7 @@ export default function RecommendationPage() {
       setQuery(readableQuery);
       handleSearch(readableQuery);
     }
-  }, [readableQuery, handleSearch]);
+  }, [readableQuery]);
 
   const sortedResults = [...results].sort((a, b) => {
     const aScore = a.endorsement_score ?? -1;
@@ -90,33 +98,48 @@ export default function RecommendationPage() {
       </Head>
 
       <main className="min-h-screen bg-gray-100 p-4 flex flex-col items-center">
-        <Image src="/Buyditorglogo.png" alt="Buydit Logo" width={200} height={60} className="mb-4 mt-4" />
-        <p className="text-center text-gray-700 font-bold mb-6">Reddit recommends. We link. You buy.</p>
-
-        <input
-          type="text"
-          className="w-full text-black max-w-md p-3 border rounded mb-4"
-          placeholder="What are you looking for? (e.g. Coffee Grinder, Keyboard)"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && query.trim()) {
-              handleSearch();
-            }
-          }}
+      <button onClick={resetPage} className="mb-4 mt-4">
+        <Image
+          src="/Buyditorglogo.png"
+          alt="Buydit Logo"
+          width={200}
+          height={60}
+          className="cursor-pointer"
         />
+      </button> 
+      <p className="text-center text-gray-700 font-bold mb-6">Reddit recommends. We link. You buy.</p>
 
-        <p className="text-xs text-gray-600 -mt-3 mb-4">
-          (URLs aren’t fully supported yet — for best results, enter a product name)
+        <div className="relative w-full max-w-md mb-4">
+  <input
+    type="text"
+    className="w-full text-black p-3 pr-24 border rounded"
+    placeholder="What are you looking for? (e.g. Coffee Grinder)"
+    value={query}
+    onChange={(e) => setQuery(e.target.value)}
+    onKeyDown={(e) => {
+      if (e.key === "Enter" && query.trim()) {
+        handleSearch();
+      }
+    }}
+  />
+  <button
+    onClick={() => handleSearch()}
+    className="absolute top-1/2 right-2 -translate-y-1/2 bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+    disabled={loading}
+  >
+    {loading ? "..." : "Search"}
+  </button>
+</div>
+<p className="text-xs text-gray-600 -mt-3 mb-4">
+        Enter a product description for best results – URLs aren’t fully supported yet.
+
         </p>
-
-        <button
-          onClick={() => handleSearch()}
-          className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-          disabled={loading}
-        >
-          {loading ? "Searching..." : "Search"}
-        </button>
+        <Link
+  href="/topics"
+  className="bg-[#FF9900] hover:bg-[#e68a00] text-white font-semibold px-4 py-2 rounded transition whitespace-nowrap"
+>
+  Explore Popular Searches
+</Link>
 
         {loading && showDelayNotice && (
           <p className="text-sm text-gray-600 text-center mt-2 max-w-md">
@@ -124,82 +147,89 @@ export default function RecommendationPage() {
           </p>
         )}
 
-        {results.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="mt-6 bg-white p-4 rounded-2xl shadow-lg max-w-md w-full"
-          >
-            <p className="text-center font-semibold mb-3 text-gray-800 flex items-center justify-center gap-2">
-              <Share className="w-5 h-5" />
-              Share These Results
-            </p>
+{results.length > 0 && (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4 }}
+    className="mt-6 bg-white p-4 rounded-2xl shadow-lg max-w-md w-full"
+  >
+    {/* Header button to toggle visibility */}
+    <button
+      onClick={() => setShowShareOptions((prev) => !prev)}
+      className="w-full flex items-center justify-center gap-2 font-semibold text-gray-800"
+    >
+      <Share className="w-5 h-5" />
+      {showShareOptions ? "Hide Share Options" : "Share These Results"}
+    </button>
 
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => {
-                  const url = `https://www.buydit.org/?query=${encodeURIComponent(query)}`;
-                  navigator.clipboard.writeText(url);
-                  alert("🔗 Link copied to clipboard!");
-                  gaEvent({ action: "share_copy_link", category: "engagement", label: query });
-                }}
-                className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-gray-100 hover:bg-gray-200 transition text-sm text-gray-800"
-              >
-                <Clipboard className="w-4 h-4" />
-                Copy Link
-              </button>
+    {/* Expandable share buttons */}
+    {showShareOptions && (
+      <div className="grid grid-cols-2 gap-3 mt-4">
+        <button
+          onClick={() => {
+            const url = `https://www.buydit.org/?query=${encodeURIComponent(query)}`;
+            navigator.clipboard.writeText(url);
+            alert("🔗 Link copied to clipboard!");
+            gaEvent({ action: "share_copy_link", category: "engagement", label: query });
+          }}
+          className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-gray-100 hover:bg-gray-200 transition text-sm text-gray-800"
+        >
+          <Clipboard className="w-4 h-4" />
+          Copy Link
+        </button>
 
-              <a
-                href={`sms:?&body=Check this out on Buydit: https://www.buydit.org/?query=${encodeURIComponent(query)}`}
-                className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-blue-100 hover:bg-blue-200 transition text-sm text-gray-800"
-              >
-                <MessageSquare className="w-4 h-4" />
-                Text Message
-              </a>
+        <a
+          href={`sms:?&body=Check this out on Buydit: https://www.buydit.org/?query=${encodeURIComponent(query)}`}
+          className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-blue-100 hover:bg-blue-200 transition text-sm text-gray-800"
+        >
+          <MessageSquare className="w-4 h-4" />
+          Text Message
+        </a>
 
-              <a
-                href={`https://www.facebook.com/sharer/sharer.php?u=https://www.buydit.org/?query=${encodeURIComponent(query)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 transition text-sm text-white"
-              >
-                <Globe className="w-4 h-4" />
-                Facebook
-              </a>
+        <a
+          href={`https://www.facebook.com/sharer/sharer.php?u=https://www.buydit.org/?query=${encodeURIComponent(query)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 transition text-sm text-white"
+        >
+          <Globe className="w-4 h-4" />
+          Facebook
+        </a>
 
-              <a
-                href={`https://www.reddit.com/submit?url=https://www.buydit.org/?query=${encodeURIComponent(query)}&title=Awesome+Finds+on+Buydit`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-orange-500 hover:bg-orange-600 transition text-sm text-white"
-              >
-                <Megaphone className="w-4 h-4" />
-                Reddit
-              </a>
+        <a
+          href={`https://www.reddit.com/submit?url=https://www.buydit.org/?query=${encodeURIComponent(query)}&title=Awesome+Finds+on+Buydit`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-orange-500 hover:bg-orange-600 transition text-sm text-white"
+        >
+          <Megaphone className="w-4 h-4" />
+          Reddit
+        </a>
 
-              <a
-                href={`https://api.whatsapp.com/send?text=Check%20this%20out%20on%20Buydit:%20https://www.buydit.org/?query=${encodeURIComponent(query)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-green-500 hover:bg-green-600 transition text-sm text-white"
-              >
-                <Send className="w-4 h-4" />
-                WhatsApp
-              </a>
+        <a
+          href={`https://api.whatsapp.com/send?text=Check%20this%20out%20on%20Buydit:%20https://www.buydit.org/?query=${encodeURIComponent(query)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-green-500 hover:bg-green-600 transition text-sm text-white"
+        >
+          <Send className="w-4 h-4" />
+          WhatsApp
+        </a>
 
-              <a
-                href={`https://twitter.com/intent/tweet?url=https://www.buydit.org/?query=${encodeURIComponent(query)}&text=Check%20this%20out%20on%20Buydit!`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-black hover:bg-gray-800 transition text-sm text-white"
-              >
-                <Link2 className="w-4 h-4" />
-                X (Twitter)
-              </a>
-            </div>
-          </motion.div>
-        )}
+        <a
+          href={`https://twitter.com/intent/tweet?url=https://www.buydit.org/?query=${encodeURIComponent(query)}&text=Check%20this%20out%20on%20Buydit!`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-black hover:bg-gray-800 transition text-sm text-white"
+        >
+          <Link2 className="w-4 h-4" />
+          X (Twitter)
+        </a>
+      </div>
+    )}
+  </motion.div>
+)}
 
         <div className="w-full max-w-md mt-6 space-y-4">
           {sortedResults.map((item, idx) => (
@@ -226,33 +256,47 @@ export default function RecommendationPage() {
                   <span className="font-extrabold">Endorsement Strength:</span> {(item.endorsement_score * 100).toFixed(0)}%
                 </p>
               )}
-              <div className="flex gap-3">
-                {item.redditUrl && (
-                  <a
-                    href={item.redditUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block px-4 py-2 rounded text-white font-semibold bg-[#FF4500] hover:bg-[#e03d00] transition"
-                  >
-                    View Reddit Thread
-                  </a>
-                )}
-                {item.amazonUrl && (
-                  <>
-                    <a
-                      href={item.amazonUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block px-4 py-2 rounded text-white font-semibold bg-[#FF9900] hover:bg-[#e68a00] transition"
-                    >
-                      View on Amazon
-                    </a>
-                    <p style={{ fontSize: "0.75rem", color: "#888", marginTop: "0.25rem" }}>
-                      This link may earn us a few cents and keeps the site ad-free ❤️
-                    </p>
-                  </>
-                )}
-              </div>
+<div className="flex gap-3 w-full">
+  {item.redditUrl && (
+    <a
+      href={item.redditUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={() =>
+        gaEvent({
+          action: 'reddit_thread_click',
+          category: 'product_engagement',
+          label: item.product,
+        })
+      }
+      className="flex-1 px-4 py-2 rounded text-white font-semibold bg-[#FF4500] hover:bg-[#e03d00] transition text-center"
+    >
+      View Reddit Thread
+    </a>
+  )}
+
+  {item.amazonUrl && (
+    <a
+      href={item.amazonUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={() =>
+        gaEvent({
+          action: 'affiliate_click',
+          category: 'product_engagement',
+          label: item.product,
+        })
+      }
+      className="flex-1 px-4 py-2 rounded text-white font-semibold bg-[#FF9900] hover:bg-[#e68a00] transition text-center leading-snug"
+    >
+      View on Amazon
+      <br />
+      <span className="text-xs text-black font-normal opacity-90">
+      This link may earn us a few cents and keeps the site ad-free ❤️
+      </span>
+    </a>
+  )}
+</div>
             </div>
           ))}
         </div>

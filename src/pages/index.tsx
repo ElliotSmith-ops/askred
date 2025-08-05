@@ -13,11 +13,16 @@ import {
   Megaphone,
   Link2,
 } from "lucide-react";
+import { useRouter } from "next/router";
+
 
 export default function Home() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [showDelayNotice, setShowDelayNotice] = useState(false);
+  const [showShareOptions, setShowShareOptions] = useState(false);
+
   const [results, setResults] = useState<
   {
     product: string;
@@ -27,6 +32,13 @@ export default function Home() {
     amazonUrl?: string;
   }[]
 >([]);
+
+
+const resetPage = () => {
+  setQuery("");
+  setResults([]);
+  router.push("/", undefined, { shallow: true });
+};
 
   const handleSearch = useCallback(async (inputQuery?: string) => {
     const searchQuery = (inputQuery ?? query).toString();
@@ -101,8 +113,16 @@ export default function Home() {
       </Head>
 
       <main className="min-h-screen bg-gray-100 p-4 flex flex-col items-center">
-        <Image src="/Buyditorglogo.png" alt="Buydit Logo" width={200} height={60} className="mb-4 mt-4" />
-        <p className="text-center text-gray-700 font-bold mb-6">Reddit recommends. We link. You buy.</p>
+      <button onClick={resetPage} className="mb-4 mt-4">
+        <Image
+          src="/Buyditorglogo.png"
+          alt="Buydit Logo"
+          width={200}
+          height={60}
+          className="cursor-pointer"
+        />
+      </button> 
+      <p className="text-center text-gray-700 font-bold mb-6">Reddit recommends. We link. You buy.</p>
 
         <div className="relative w-full max-w-md mb-4">
   <input
@@ -128,7 +148,7 @@ export default function Home() {
 
 
         <p className="text-xs text-gray-600 -mt-3 mb-4">
-          (URLs aren’t fully supported yet — for best results, enter a product name)
+        Enter a product description for best results – URLs aren’t fully supported yet.
         </p>
         <Link
   href="/topics"
@@ -142,6 +162,90 @@ export default function Home() {
             ⏳ This might be a first-time search. Please allow ~10 seconds while we gather fresh Reddit recommendations.
           </p>
         )}
+
+{results.length > 0 && (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4 }}
+    className="mt-6 bg-white p-4 rounded-2xl shadow-lg max-w-md w-full"
+  >
+    {/* Header button to toggle visibility */}
+    <button
+      onClick={() => setShowShareOptions((prev) => !prev)}
+      className="w-full flex items-center justify-center gap-2 font-semibold text-gray-800"
+    >
+      <Share className="w-5 h-5" />
+      {showShareOptions ? "Hide Share Options" : "Share These Results"}
+    </button>
+
+    {/* Expandable share buttons */}
+    {showShareOptions && (
+      <div className="grid grid-cols-2 gap-3 mt-4">
+        <button
+          onClick={() => {
+            const url = `https://www.buydit.org/?query=${encodeURIComponent(query)}`;
+            navigator.clipboard.writeText(url);
+            alert("🔗 Link copied to clipboard!");
+            gaEvent({ action: "share_copy_link", category: "engagement", label: query });
+          }}
+          className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-gray-100 hover:bg-gray-200 transition text-sm text-gray-800"
+        >
+          <Clipboard className="w-4 h-4" />
+          Copy Link
+        </button>
+
+        <a
+          href={`sms:?&body=Check this out on Buydit: https://www.buydit.org/?query=${encodeURIComponent(query)}`}
+          className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-blue-100 hover:bg-blue-200 transition text-sm text-gray-800"
+        >
+          <MessageSquare className="w-4 h-4" />
+          Text Message
+        </a>
+
+        <a
+          href={`https://www.facebook.com/sharer/sharer.php?u=https://www.buydit.org/?query=${encodeURIComponent(query)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 transition text-sm text-white"
+        >
+          <Globe className="w-4 h-4" />
+          Facebook
+        </a>
+
+        <a
+          href={`https://www.reddit.com/submit?url=https://www.buydit.org/?query=${encodeURIComponent(query)}&title=Awesome+Finds+on+Buydit`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-orange-500 hover:bg-orange-600 transition text-sm text-white"
+        >
+          <Megaphone className="w-4 h-4" />
+          Reddit
+        </a>
+
+        <a
+          href={`https://api.whatsapp.com/send?text=Check%20this%20out%20on%20Buydit:%20https://www.buydit.org/?query=${encodeURIComponent(query)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-green-500 hover:bg-green-600 transition text-sm text-white"
+        >
+          <Send className="w-4 h-4" />
+          WhatsApp
+        </a>
+
+        <a
+          href={`https://twitter.com/intent/tweet?url=https://www.buydit.org/?query=${encodeURIComponent(query)}&text=Check%20this%20out%20on%20Buydit!`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-black hover:bg-gray-800 transition text-sm text-white"
+        >
+          <Link2 className="w-4 h-4" />
+          X (Twitter)
+        </a>
+      </div>
+    )}
+  </motion.div>
+)}
 
         <div className="w-full max-w-md mt-6 space-y-4">
           {sortedResults.map((item, idx) => (
@@ -175,132 +279,51 @@ export default function Home() {
                   <span className="font-extrabold">Endorsement Strength:</span> {(item.endorsement_score * 100).toFixed(0)}%
                 </p>
               )}
-              <div className="flex gap-3">
-                {item.redditUrl && (
-                  <a
-                    href={item.redditUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() =>
-                      gaEvent({
-                        action: 'reddit_thread_click',
-                        category: 'product_engagement',
-                        label: item.product,
-                      })
-                    }
-                    className="inline-block px-4 py-2 rounded text-white font-semibold bg-[#FF4500] hover:bg-[#e03d00] transition"
-                  >
-                    View Reddit Thread
-                  </a>
-                )}
-                {item.amazonUrl && (
-                  <>
-                    <a
-                      href={item.amazonUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() =>
-                        gaEvent({
-                          action: 'affiliate_click',
-                          category: 'product_engagement',
-                          label: item.product,
-                        })
-                      }
-                      className="inline-block px-4 py-2 rounded text-white font-semibold bg-[#FF9900] hover:bg-[#e68a00] transition"
-                    >
-                      View on Amazon
-                    </a>
-                    <p style={{ fontSize: "0.75rem", color: "#888", marginTop: "0.25rem" }}>
-                    This link may earn us a few cents and keeps the site ad-free ❤️
-</p>
-                  </>
-                )}
-              </div>
+<div className="flex gap-3 w-full">
+  {item.redditUrl && (
+    <a
+      href={item.redditUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={() =>
+        gaEvent({
+          action: 'reddit_thread_click',
+          category: 'product_engagement',
+          label: item.product,
+        })
+      }
+      className="flex-1 px-4 py-2 rounded text-white font-semibold bg-[#FF4500] hover:bg-[#e03d00] transition text-center"
+    >
+      View Reddit Thread
+    </a>
+  )}
+
+  {item.amazonUrl && (
+    <a
+      href={item.amazonUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={() =>
+        gaEvent({
+          action: 'affiliate_click',
+          category: 'product_engagement',
+          label: item.product,
+        })
+      }
+      className="flex-1 px-4 py-2 rounded text-white font-semibold bg-[#FF9900] hover:bg-[#e68a00] transition text-center leading-snug"
+    >
+      View on Amazon
+      <br />
+      <span className="text-xs text-black font-normal opacity-90">
+      This link may earn us a few cents and keeps the site ad-free ❤️
+      </span>
+    </a>
+  )}
+</div>
             </div>
           ))}
         </div>
 
-        {results.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="mt-6 bg-white p-4 rounded-2xl shadow-lg max-w-md w-full"
-          >
-            <p className="text-center font-semibold mb-3 text-gray-800 flex items-center justify-center gap-2">
-              <Share className="w-5 h-5" />
-              Share These Results
-            </p>
-
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => {
-                  const url = `https://www.buydit.org/?query=${encodeURIComponent(query)}`;
-                  navigator.clipboard.writeText(url);
-                  alert("🔗 Link copied to clipboard!");
-                  gaEvent({ action: 'share_copy_link', category: 'engagement', label: query });
-                }}
-                className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-gray-100 hover:bg-gray-200 transition text-sm text-gray-800"
-              >
-                <Clipboard className="w-4 h-4" />
-                Copy Link
-              </button>
-
-              <a
-                href={`sms:?&body=Check this out on Buydit: https://www.buydit.org/?query=${encodeURIComponent(query)}`}
-                className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-blue-100 hover:bg-blue-200 transition text-sm text-gray-800"
-                onClick={() => gaEvent({ action: 'share_sms', category: 'engagement', label: query })}
-              >
-                <MessageSquare className="w-4 h-4" />
-                Text Message
-              </a>
-
-              <a
-                href={`https://www.facebook.com/sharer/sharer.php?u=https://www.buydit.org/?query=${encodeURIComponent(query)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 transition text-sm text-white"
-                onClick={() => gaEvent({ action: 'share_facebook', category: 'engagement', label: query })}
-              >
-                <Globe className="w-4 h-4" />
-                Facebook
-              </a>
-
-              <a
-                href={`https://www.reddit.com/submit?url=https://www.buydit.org/?query=${encodeURIComponent(query)}&title=Awesome+Finds+on+Buydit`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-orange-500 hover:bg-orange-600 transition text-sm text-white"
-                onClick={() => gaEvent({ action: 'share_reddit', category: 'engagement', label: query })}
-              >
-                <Megaphone className="w-4 h-4" />
-                Reddit
-              </a>
-
-              <a
-                href={`https://api.whatsapp.com/send?text=Check%20this%20out%20on%20Buydit:%20https://www.buydit.org/?query=${encodeURIComponent(query)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-green-500 hover:bg-green-600 transition text-sm text-white"
-                onClick={() => gaEvent({ action: 'share_whatsapp', category: 'engagement', label: query })}
-              >
-                <Send className="w-4 h-4" />
-                WhatsApp
-              </a>
-
-              <a
-                href={`https://twitter.com/intent/tweet?url=https://www.buydit.org/?query=${encodeURIComponent(query)}&text=Check%20this%20out%20on%20Buydit!`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 justify-center px-3 py-2 rounded bg-black hover:bg-gray-800 transition text-sm text-white"
-                onClick={() => gaEvent({ action: 'share_twitter', category: 'engagement', label: query })}
-              >
-                <Link2 className="w-4 h-4" />
-                X (Twitter)
-              </a>
-            </div>
-          </motion.div>
-        )}
 
         <button
   onClick={() => {

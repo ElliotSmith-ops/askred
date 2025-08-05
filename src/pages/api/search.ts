@@ -175,10 +175,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         - "product": The name of the product being recommended.
         - "reason": A brief explanation of why users recommended it. Include one or two direct quotes from Reddit users in the reason. Wrap quotes in curly smart quotes (“ and ”) instead of escaping them.
         - "endorsement_score": A number from 0 to 1 representing the strength of the endorsement:
-          - 0.9–1.0 = Strong, repeated, enthusiastic endorsements by multiple users
-          - 0.6–0.8 = Recommended clearly by at least one user
-          - 0.3–0.5 = Mentioned with some endorsement but less certainty or consensus
-          - 0.0–0.2 = Do not include these
+          - 0.81–1.00 = Strong, repeated, enthusiastic endorsements by multiple users
+          - 0.51–0.80 = Recommended clearly by at least one user
+          - 0.21–0.50 = Mentioned with some endorsement but less certainty or consensus
+          - 0.00–0.20 = Do not include these
 
         Output must be valid JSON — no markdown, no intro, no trailing comments. Return only the array.
 
