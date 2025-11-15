@@ -19,7 +19,8 @@ type SerpResult = {
 type GPTProduct = {
   product: string;
   reason: string;
-  endorsement_score?: number;
+  // allow null here, since we sometimes use `|| null`
+  endorsement_score?: number | null;
   redditUrl: string;
   amazonUrl: string;
 };
@@ -99,9 +100,10 @@ export default async function handler(
       return;
     }
 
-    // 2) SerpAPI search – Christmas gift flavored query
+    // 2) SerpAPI search – plug YOUR favorite serp query format
     console.log("⚡ Searching via SerpAPI (Christmas) for:", query);
 
+    // Change this string if you tweak your SERP query:
     const serpQuery = `christmas gift ideas for ${query} site:reddit.com recommendations`;
 
     const serpUrl = `https://serpapi.com/search.json?q=${encodeURIComponent(
@@ -125,6 +127,14 @@ export default async function handler(
         score: 0,
         num_comments: 0,
       }));
+
+    const isVague = (name: string) => {
+      return (
+        name.trim().split(/\s+/).length <= 2 &&
+        name.length <= 20 &&
+        !name.toLowerCase().includes(query)
+      );
+    };
 
     const fetchRedditComments = async (postId: string): Promise<string[]> => {
       const token = await getRedditToken();
@@ -184,32 +194,32 @@ export default async function handler(
         );
 
         const prompt = `
-You are an assistant extracting only **clearly endorsed product recommendations** from Reddit comments about Christmas gift ideas for "${query}".
-
-Only include products that are explicitly recommended or praised as something the commenter has personally used or strongly supports.
-
-Skip vague mentions, jokes, comparisons, speculation, or off-topic products. It’s perfectly acceptable to return an empty list if no clear recommendations are found.
-
-For each recommendation, return:
-- "product": The name of the product being recommended.
-- "reason": A brief explanation of why users recommended **that specific product**. 
-  - The reason MUST be tailored to that product, not a generic sentence reused for multiple items.
-  - If a single comment mentions several products, create separate entries and make the reason specific to each item.
-  - Include one or two direct quotes from Reddit users in the reason when possible. Wrap quotes in curly smart quotes (“ and ”).
-- "endorsement_score": A number from 0 to 1 representing the strength of the endorsement:
-  - 0.81–1.00 = Strong, repeated, enthusiastic endorsements by multiple users
-  - 0.51–0.80 = Recommended clearly by at least one user
-  - 0.21–0.50 = Mentioned with some endorsement but less certainty or consensus
-  - 0.00–0.20 = Do not include these
-
-Very important:
-- Do NOT reuse the exact same "reason" text for different products.
-- Each "reason" must mention at least one detail or benefit that applies uniquely or concretely to that specific product.
-
-Output must be valid JSON — no markdown, no intro, no trailing comments. Return only the array.
-
-Comments:
-${commentBlock}
+        You are an assistant extracting only **clearly endorsed product recommendations** from Reddit comments about Christmas gift ideas for "${query}".
+        
+        Only include products that are explicitly recommended or praised as something the commenter has personally used or strongly supports.
+        
+        Skip vague mentions, jokes, comparisons, speculation, or off-topic products. It’s perfectly acceptable to return an empty list if no clear recommendations are found.
+        
+        For each recommendation, return:
+        - "product": The name of the product being recommended.
+        - "reason": A brief explanation of why users recommended **that specific product**. 
+          - The reason MUST be tailored to that product, not a generic sentence reused for multiple items.
+          - If a single comment mentions several products, create separate entries and make the reason specific to each item.
+          - Include one or two direct quotes from Reddit users in the reason when possible. Wrap quotes in curly smart quotes (“ and ”).
+        - "endorsement_score": A number from 0 to 1 representing the strength of the endorsement:
+          - 0.81–1.00 = Strong, repeated, enthusiastic endorsements by multiple users
+          - 0.51–0.80 = Recommended clearly by at least one user
+          - 0.21–0.50 = Mentioned with some endorsement but less certainty or consensus
+          - 0.00–0.20 = Do not include these
+        
+        Very important:
+        - Do NOT reuse the exact same "reason" text for different products.
+        - Each "reason" must mention at least one detail or benefit that applies uniquely or concretely to that specific product.
+        
+        Output must be valid JSON — no markdown, no intro, no trailing comments. Return only the array.
+        
+        Comments:
+        ${commentBlock}
         `.trim();
 
         console.log("🤖 Calling GPT (Christmas extractor)...");
@@ -243,7 +253,9 @@ ${commentBlock}
               item: Omit<GPTProduct, "redditUrl" | "amazonUrl">
             ): GPTProduct => {
               const productName = item.product;
-              const enhancedSearch = productName; // ✅ Option 1: just the product name
+              const enhancedSearch = isVague(productName)
+                ? `${productName} ${query}`
+                : `${productName} christmas gift`;
 
               return {
                 product: productName,
