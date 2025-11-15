@@ -157,6 +157,22 @@ const resetPage = () => {
   Explore Popular Searches
 </Link>
 
+<div className="mt-3">
+  <Link
+    href="/christmas"
+    onClick={() =>
+      gaEvent({
+        action: "nav_christmas_page",
+        category: "navigation",
+        label: "homepage_christmas_link",
+      })
+    }
+    className="inline-flex items-center gap-2 text-sm font-semibold text-green-700 hover:text-green-800 hover:underline"
+  >
+    🎄 New for the holidays: <span>Christmas Gift Ideas Finder</span>
+  </Link>
+</div>
+
         {loading && showDelayNotice && (
           <p className="text-sm text-gray-600 text-center mt-2 max-w-md">
             ⏳ This might be a first-time search. Please allow ~10 seconds while we gather fresh Reddit recommendations.
